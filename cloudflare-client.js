@@ -2,7 +2,7 @@
 class RecipeAPI {
   constructor(base, storage = globalThis.sessionStorage, transport = globalThis.fetch.bind(globalThis)) {
     this.base = base.replace(/\/$/, ''); this.storage = storage; this.transport = transport;
-    this.householdId = null; this.token = storage.getItem('recipe-cloudflare-session') || null;
+    this.images = new Map(); this.householdId = null; this.token = storage.getItem('recipe-cloudflare-session') || null;
   }
   hasSession() { return !!this.token; }
   clear() { this.token = null; this.householdId = null; this.storage.removeItem('recipe-cloudflare-session'); }
@@ -28,6 +28,13 @@ class RecipeAPI {
     }
     if (!data) throw new Error('The library returned an unexpected response.');
     return data;
+  }
+  async photo(path) {
+    if (/^https:\/\//i.test(path)) return path;
+    if (this.images.has(path)) return this.images.get(path);
+    const response = await this.transport(this.imageUrl(path), {headers:{Authorization:'Bearer '+this.token,'X-Household-Id':this.householdId},credentials:'omit',cache:'no-store'});
+    if (!response.ok) throw new Error('Photo could not be loaded');
+    const url = URL.createObjectURL(await response.blob()); this.images.set(path,url); return url;
   }
   imageUrl(path) {
     // Legacy URLs must be migrated before cutover; never treat arbitrary schemes as images.

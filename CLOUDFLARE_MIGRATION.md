@@ -66,3 +66,11 @@ The supplied Worker contains **no image upload/serving or scan endpoint**, no R2
 Next: obtain authenticated Cloudflare management access or a supported deployment path; configure image storage and server-side scanning; migrate original image bytes with a path mapping; implement and test those routes. Do not silently treat old relative Supabase image paths as migrated. Existing absolute HTTPS images can still display but remain an external dependency until migrated.
 
 Then run authenticated browser tests and disposable CRUD/planner tests, verify 17 recipes, photographs, scan, membership and mobile appearance. No live data writes or cutover have been performed in this checkpoint.
+
+### Media implementation checkpoint
+
+R2 `RECIPE_IMAGES` and Workers AI `AI` bindings were confirmed in user screenshots. The existing Supabase scan function was then inspected through the connected Supabase tools: it uses OpenAI Responses, model `gpt-5.6-luna`, with all images in one request. Preserve OpenAI; **Workers AI is unused**.
+
+Added household-authenticated JPEG upload/read routes to the proposed Worker and authenticated blob loading in the frontend (plain img requests cannot carry bearer headers). Added OpenAI multi-page scanning with validation, rate limiting, server-side key, and structured result validation. Eight mocked tests pass. Not deployed or live-tested.
+
+Required before deployment: add `OPENAI_API_KEY` as an encrypted Cloudflare secret using the existing OpenAI project key; never put it in GitHub or chat. Optional `OPENAI_MODEL` overrides the existing model. The existing model name was copied from the deployed function, not proven callable in this session. Do not deploy main or retire Supabase until photos are migrated and end-to-end tests pass. New Worker source is `cloudflare/worker.js`.
