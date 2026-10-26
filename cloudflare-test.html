@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Our Recipes — Cloudflare test</title><style>body{background:#f4efe5;color:#2f342f;font:16px system-ui;margin:0;padding:24px}main{max-width:480px;margin:40px auto;background:#fffdf8;border-radius:18px;padding:24px}h1{font-family:Georgia,serif}input,button{box-sizing:border-box;width:100%;font:inherit;padding:13px;border-radius:10px;margin:8px 0;border:1px solid #ded8cb}button{background:#655778;color:white;border:0;cursor:pointer}button:disabled{opacity:.5}#status{white-space:pre-wrap;line-height:1.5}small{color:#77766f}</style></head>
+<body><main><h1>Our Recipes</h1><p>Cloudflare connection test</p><small>This test does not change your recipes or live website.</small><form id="form"><input id="email" type="email" placeholder="Email" autocomplete="username" required><input id="password" type="password" placeholder="Password" autocomplete="current-password" required><button id="submit" type="submit">Sign in and check recipes</button></form><p id="status" role="status" aria-live="polite">Not connected yet.</p></main>
+<script>
+const API='https://recipe-library-api.gporteous86.workers.dev';
+const HOUSEHOLD='0073df82-f7b1-4eb0-b919-001e36eaa4de';
+const form=document.getElementById('form'),status=document.getElementById('status'),submit=document.getElementById('submit');
+form.addEventListener('submit',async e=>{
+ e.preventDefault();submit.disabled=true;status.textContent='Signing in…';
+ try{
+  const login=await fetch(API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value})});
+  document.getElementById('password').value='';
+  if(!login.ok){let detail='';try{detail=(await login.json()).error||''}catch{}throw Error('Login failed (HTTP '+login.status+'). '+detail)}
+  const auth=await login.json();
+  if(!auth.token)throw Error('Login response contained no token.');
+  status.textContent='Login successful. Loading recipes…';
+  const response=await fetch(API+'/recipes',{headers:{'Authorization':'Bearer '+auth.token,'X-Household-Id':HOUSEHOLD}});
+  if(!response.ok){let detail='';try{detail=(await response.json()).error||''}catch{}throw Error('Recipe request failed (HTTP '+response.status+'). '+detail)}
+  const result=await response.json();
+  const list=Array.isArray(result)?result:result.recipes;
+  if(!Array.isArray(list))throw Error('Recipes response format was unexpected.');
+  status.textContent='Login successful!\nRecipes retrieved: '+list.length+' / 17\n\nCloudflare is responding to the browser.';
+ }catch(err){status.textContent='Test failed: '+err.message+'\n\nIf PowerShell works but this test fails, we may need to adjust browser access.'}
+ finally{submit.disabled=false}
+});
+</script></body></html>
