@@ -49,3 +49,20 @@ GitHub integration can fetch files/create branches and has committed simple file
 
 ## Important
 The user wants this finished with minimal repeated questions. They already spent a long session setting up Cloudflare, password reset, CORS and confirming imports. Avoid revisiting those tasks; focus on frontend and remaining backend features. Never expose passwords, hashes or tokens.
+
+## Development checkpoint — 26 October, frontend conversion
+
+- Copied the supplied deployed Worker source into `cloudflare/worker.js`; no backend deployment or database migration performed.
+- Converted the development frontend to `cloudflare-client.js`: auth/session restore, household create/join, recipe CRUD/favourites, and seven-day planner use the exact methods and envelopes in that source.
+- Session bearer tokens use sessionStorage (survive reload in the tab, cleared by sign-out/expiry); never query parameters or logs.
+- Meal editing no longer deletes the saved slot before the replacement is submitted. Failed picture uploads retain the saved recipe ID so retry does not create a duplicate.
+- Removed Supabase SDK/configuration from the development frontend. Existing design and recipe review/scanning flow retained.
+- Client contract/error tests pass with Node's built-in test runner; inline JavaScript syntax checked. These are mocked checks, **not authenticated live/browser verification**.
+
+### Still blocked / not ready for cutover
+
+The supplied Worker contains **no image upload/serving or scan endpoint**, no R2 binding, and no AI integration. The frontend now targets POST `/images` with `{recipe_id,image,mimeType}` (expects `{path}`), GET `/images/<path>`, and POST `/scan-recipe` with `{images:[{image,mimeType}]}` (expects `{recipe}`). These are proposed contracts, not deployed capabilities. Do not deploy this frontend to main yet.
+
+Next: obtain authenticated Cloudflare management access or a supported deployment path; configure image storage and server-side scanning; migrate original image bytes with a path mapping; implement and test those routes. Do not silently treat old relative Supabase image paths as migrated. Existing absolute HTTPS images can still display but remain an external dependency until migrated.
+
+Then run authenticated browser tests and disposable CRUD/planner tests, verify 17 recipes, photographs, scan, membership and mobile appearance. No live data writes or cutover have been performed in this checkpoint.
